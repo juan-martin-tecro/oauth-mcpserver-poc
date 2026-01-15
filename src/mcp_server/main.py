@@ -129,6 +129,7 @@ def create_app() -> Starlette:
         excluded_paths=[
             "/",
             "/.well-known/oauth-protected-resource",
+            "/.well-known/oauth-authorization-server",
             "/healthz",
             "/auth/start",
             "/auth/callback",

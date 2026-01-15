@@ -125,8 +125,8 @@ async def auth_callback(request: Request) -> JSONResponse:
             },
         )
 
-    # Retrieve stored state data
-    state_data = oauth_state_store.get(state)
+    # Retrieve stored state data without consuming it (allows retries on errors)
+    state_data = oauth_state_store.peek(state)
     if not state_data:
         return JSONResponse(
             status_code=400,
@@ -157,6 +157,7 @@ async def auth_callback(request: Request) -> JSONResponse:
             )
 
             if response.status_code != 200:
+                # Error in token exchange - don't consume state to allow retries
                 error_data = response.json() if response.content else {}
                 return JSONResponse(
                     status_code=response.status_code,
@@ -165,6 +166,9 @@ async def auth_callback(request: Request) -> JSONResponse:
                         "error_description": error_data.get("error_message", response.text),
                     },
                 )
+
+            # Success! Now consume the state to prevent replay attacks
+            oauth_state_store.consume(state)
 
             # Return tokens
             tokens = response.json()

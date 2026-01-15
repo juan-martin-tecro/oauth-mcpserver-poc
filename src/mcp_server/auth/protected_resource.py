@@ -23,6 +23,7 @@ def get_authorization_server_metadata() -> Dict[str, Any]:
         "issuer": settings.auth_server_issuer,
         "authorization_endpoint": settings.auth_server_authorize_url,
         "token_endpoint": settings.auth_server_token_url,
+        "registration_endpoint": f"{settings.server_url}/register",
         "scopes_supported": settings.supported_scopes,
         "response_types_supported": ["code"],
         "response_modes_supported": ["query"],

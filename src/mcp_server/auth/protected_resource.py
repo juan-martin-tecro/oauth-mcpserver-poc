@@ -9,6 +9,43 @@ from starlette.routing import Route
 from ..config import settings
 
 
+def get_authorization_server_metadata() -> Dict[str, Any]:
+    """
+    Generate OAuth 2.0 Authorization Server Metadata per RFC 8414.
+
+    This metadata document allows MCP clients to discover the endpoints
+    needed to complete the OAuth flow through Ares.
+
+    Returns:
+        dict: Metadata document for the authorization server
+    """
+    return {
+        "issuer": settings.auth_server_issuer,
+        "authorization_endpoint": settings.auth_server_authorize_url,
+        "token_endpoint": settings.auth_server_token_url,
+        "scopes_supported": settings.supported_scopes,
+        "response_types_supported": ["code"],
+        "response_modes_supported": ["query"],
+        "grant_types_supported": ["authorization_code", "refresh_token"],
+        "token_endpoint_auth_methods_supported": ["none"],
+        "code_challenge_methods_supported": ["S256"],
+    }
+
+
+async def authorization_server_metadata_endpoint(request: Request) -> JSONResponse:
+    """
+    Handle GET /.well-known/oauth-authorization-server requests.
+
+    Per RFC 8414, returns metadata about the authorization server
+    including endpoints for authorization and token exchange.
+    """
+    metadata = get_authorization_server_metadata()
+    return JSONResponse(
+        content=metadata,
+        media_type="application/json",
+    )
+
+
 def get_protected_resource_metadata() -> Dict[str, Any]:
     """
     Generate OAuth 2.0 Protected Resource Metadata per RFC 9728.
@@ -21,7 +58,8 @@ def get_protected_resource_metadata() -> Dict[str, Any]:
     """
     return {
         "resource": settings.server_url,
-        "authorization_servers": [settings.auth_server_issuer],
+        # Point to our own server which proxies the auth server metadata
+        "authorization_servers": [settings.server_url],
         "scopes_supported": settings.supported_scopes,
         "bearer_methods_supported": ["header"],
         "resource_documentation": f"{settings.server_url}/docs",
@@ -43,11 +81,16 @@ async def protected_resource_metadata_endpoint(request: Request) -> JSONResponse
 
 
 def get_protected_resource_routes() -> List[Route]:
-    """Return routes for RFC 9728 Protected Resource Metadata."""
+    """Return routes for RFC 9728 Protected Resource Metadata and RFC 8414 Authorization Server Metadata."""
     return [
         Route(
             "/.well-known/oauth-protected-resource",
             endpoint=protected_resource_metadata_endpoint,
+            methods=["GET"],
+        ),
+        Route(
+            "/.well-known/oauth-authorization-server",
+            endpoint=authorization_server_metadata_endpoint,
             methods=["GET"],
         ),
     ]

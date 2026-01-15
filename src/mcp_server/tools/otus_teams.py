@@ -25,6 +25,15 @@ def register_tools(mcp: FastMCP, otus_client: OtusClient) -> None:
     """
 
     @mcp.tool(
+        name="ping",
+        description="Simple ping tool to test MCP connectivity. Returns 'pong' with a timestamp.",
+    )
+    async def ping() -> str:
+        """Simple ping tool for testing connectivity."""
+        import datetime
+        return f"pong - {datetime.datetime.now().isoformat()}"
+
+    @mcp.tool(
         name="otus_teams",
         description="Retrieve teams from the Otus API. Returns a list of teams the authenticated user has access to.",
     )

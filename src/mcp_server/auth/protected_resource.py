@@ -20,9 +20,9 @@ def get_authorization_server_metadata() -> Dict[str, Any]:
         dict: Metadata document for the authorization server
     """
     return {
-        "issuer": settings.auth_server_issuer,
-        "authorization_endpoint": settings.auth_server_authorize_url,
-        "token_endpoint": settings.auth_server_token_url,
+        "issuer": settings.server_url,
+        "authorization_endpoint": f"{settings.server_url}/oauth/authorize",
+        "token_endpoint": f"{settings.server_url}/oauth/token",
         "registration_endpoint": f"{settings.server_url}/register",
         "scopes_supported": settings.supported_scopes,
         "response_types_supported": ["code"],

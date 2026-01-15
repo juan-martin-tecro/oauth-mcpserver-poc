@@ -14,6 +14,7 @@ from .auth.protected_resource import get_protected_resource_routes
 from .auth.token_verifier import Auth0TokenVerifier
 from .config import settings
 from .oauth.client_registration import get_client_registration_routes
+from .oauth.proxy import get_oauth_proxy_routes
 from .oauth.routes import get_oauth_routes
 from .server import create_mcp_server
 
@@ -83,6 +84,8 @@ async def root(request: Request) -> JSONResponse:
                 "protected_resource_metadata": "/.well-known/oauth-protected-resource",
                 "authorization_server_metadata": "/.well-known/oauth-authorization-server",
                 "client_registration": "/register",
+                "oauth_authorize": "/oauth/authorize",
+                "oauth_token": "/oauth/token",
                 "mcp_sse": "/mcp/sse",
                 "auth_start": "/auth/start",
                 "auth_callback": "/auth/callback",
@@ -114,6 +117,8 @@ def create_app() -> Starlette:
         *get_protected_resource_routes(),
         # RFC 7591 Dynamic Client Registration (unprotected)
         *get_client_registration_routes(),
+        # OAuth proxy endpoints (unprotected) - translate standard OAuth to Ares
+        *get_oauth_proxy_routes(),
         # Fallback OAuth endpoints (unprotected)
         *get_oauth_routes(),
         # MCP SSE transport (protected by middleware)
@@ -137,6 +142,8 @@ def create_app() -> Starlette:
             "/.well-known/oauth-authorization-server",
             "/healthz",
             "/register",
+            "/oauth/authorize",
+            "/oauth/token",
             "/auth/start",
             "/auth/callback",
             "/auth/refresh",

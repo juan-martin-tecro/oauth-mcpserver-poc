@@ -86,7 +86,7 @@ async def root(request: Request) -> JSONResponse:
                 "client_registration": "/register",
                 "oauth_authorize": "/oauth/authorize",
                 "oauth_token": "/oauth/token",
-                "mcp_sse": "/mcp/sse",
+                "mcp": "/mcp",
                 "auth_start": "/auth/start",
                 "auth_callback": "/auth/callback",
                 "auth_refresh": "/auth/refresh",
@@ -121,8 +121,10 @@ def create_app() -> Starlette:
         *get_oauth_proxy_routes(),
         # Fallback OAuth endpoints (unprotected)
         *get_oauth_routes(),
-        # MCP SSE transport (protected by middleware)
-        Mount("/mcp", app=mcp_server.sse_app()),
+        # MCP Streamable HTTP transport (protected by middleware)
+        # Note: streamable_http_app() is the recommended transport as of MCP spec 2025-03-26
+        # SSE is deprecated but kept for backward compatibility
+        Mount("/mcp", app=mcp_server.streamable_http_app()),
     ]
 
     # Create application with lifespan handler

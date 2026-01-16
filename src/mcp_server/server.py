@@ -26,7 +26,10 @@ def create_mcp_server() -> Tuple[FastMCP, OtusClient]:
     # Note: Authentication is handled by our custom middleware,
     # not by FastMCP's built-in auth. This gives us more control
     # over the WWW-Authenticate header format per RFC 9728.
-    mcp = FastMCP(name="oauth-mcp-server")
+    #
+    # streamable_http_path="/" ensures endpoints are at the root of the mount point
+    # so when mounted at /mcp, endpoints are at /mcp instead of /mcp/mcp
+    mcp = FastMCP(name="oauth-mcp-server", streamable_http_path="/")
 
     # Create HTTP client for Otus
     otus_client = OtusClient()

@@ -1,16 +1,11 @@
 """MCP Tool implementation for Otus teams endpoint."""
 
-import json
 import logging
-from typing import TYPE_CHECKING
 
 from mcp.server.fastmcp import FastMCP
-from mcp.types import TextContent
 
+from ..auth.context import get_current_token
 from ..http_client.otus_client import OtusClient, OtusClientError
-
-if TYPE_CHECKING:
-    from starlette.requests import Request
 
 logger = logging.getLogger(__name__)
 
@@ -51,31 +46,15 @@ def register_tools(mcp: FastMCP, otus_client: OtusClient) -> None:
             ValueError: If no authentication token is available
             OtusClientError: If Otus API returns an error
         """
-        # Get the request context from FastMCP
-        # The bearer token was validated by middleware and stored in request state
-        from mcp.server.fastmcp import Context
-
-        ctx = mcp.get_context()
-
-        # Access the bearer token from the request state
+        # Get the bearer token from the context variable
         # This was set by the BearerAuthMiddleware
-        request: "Request" = getattr(ctx, "request", None)
+        bearer_token = get_current_token()
 
-        if request is None:
-            # Try to get token from context directly if available
-            bearer_token = getattr(ctx, "bearer_token", None)
-            if not bearer_token:
-                logger.error("No request context available for otus_teams tool")
-                raise ValueError(
-                    "Authentication required. No valid bearer token available."
-                )
-        else:
-            bearer_token = getattr(request.state, "bearer_token", None)
-            if not bearer_token:
-                logger.error("No bearer token in request state")
-                raise ValueError(
-                    "Authentication required. No valid bearer token available."
-                )
+        if not bearer_token:
+            logger.error("No bearer token available in context")
+            raise ValueError(
+                "Authentication required. No valid bearer token available."
+            )
 
         try:
             # Call Otus API with forwarded token

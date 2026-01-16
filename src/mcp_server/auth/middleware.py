@@ -8,6 +8,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 
 from ..config import settings
+from .context import set_current_token, clear_current_token
 from .protected_resource import get_www_authenticate_header
 from .token_verifier import Auth0TokenVerifier
 
@@ -67,7 +68,15 @@ class BearerAuthMiddleware(BaseHTTPMiddleware):
         request.state.access_token = access_token
         request.state.bearer_token = token  # Raw token for forwarding
 
-        return await call_next(request)
+        # Also store in contextvar so MCP tools can access it
+        # This is necessary because FastMCP tools don't have direct access to Starlette request
+        set_current_token(token)
+
+        try:
+            return await call_next(request)
+        finally:
+            # Clear the token after the request is done
+            clear_current_token()
 
     def _is_excluded(self, path: str) -> bool:
         """Check if path should skip authentication."""

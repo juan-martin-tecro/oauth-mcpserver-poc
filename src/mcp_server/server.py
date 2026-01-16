@@ -2,8 +2,10 @@
 
 import logging
 from typing import Tuple
+from urllib.parse import urlparse
 
 from mcp.server.fastmcp import FastMCP
+from mcp.server.transport_security import TransportSecuritySettings
 
 from .config import settings
 from .http_client.otus_client import OtusClient
@@ -29,7 +31,34 @@ def create_mcp_server() -> Tuple[FastMCP, OtusClient]:
     #
     # streamable_http_path="/" ensures endpoints are at the root of the mount point
     # so when mounted at /mcp, endpoints are at /mcp instead of /mcp/mcp
-    mcp = FastMCP(name="oauth-mcp-server", streamable_http_path="/")
+    #
+    # Configure transport security to allow our production host
+    # See: https://github.com/modelcontextprotocol/python-sdk/issues/1798
+    parsed_url = urlparse(settings.server_url)
+    server_host = parsed_url.netloc  # e.g., "oauth-mcpserver-poc.onrender.com"
+
+    transport_security = TransportSecuritySettings(
+        enable_dns_rebinding_protection=True,
+        allowed_hosts=[
+            "localhost:*",
+            "127.0.0.1:*",
+            f"{server_host}",
+            f"{server_host}:*",
+        ],
+        allowed_origins=[
+            "http://localhost:*",
+            "https://localhost:*",
+            f"https://{server_host}",
+            "https://claude.ai",
+            "https://claude.com",
+        ],
+    )
+
+    mcp = FastMCP(
+        name="oauth-mcp-server",
+        streamable_http_path="/",
+        transport_security=transport_security,
+    )
 
     # Create HTTP client for Otus
     otus_client = OtusClient()

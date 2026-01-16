@@ -40,12 +40,15 @@ async def lifespan(app):
     logger.info(f"Server URL: {settings.server_url}")
     logger.info(f"Auth Server: {settings.auth_server_issuer}")
 
-    mcp_server, otus_client = create_mcp_server()
+    # Note: mcp_server and otus_client are created in create_app() before this runs
+    # We only need to start the otus_client and initialize the MCP session manager
     await otus_client.start()
 
-    logger.info("MCP OAuth Server ready")
-
-    yield
+    # Initialize MCP session manager - required when embedding in Starlette
+    # See: https://github.com/modelcontextprotocol/python-sdk/issues/737
+    async with mcp_server.session_manager.run():
+        logger.info("MCP OAuth Server ready")
+        yield
 
     # Shutdown
     logger.info("Shutting down MCP OAuth Server...")
